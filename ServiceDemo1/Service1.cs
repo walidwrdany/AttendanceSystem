@@ -1,8 +1,13 @@
 ﻿using ServiceDemo1.DataModel;
+using ServiceDemo1.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Data.Entity;
+using System.Diagnostics;
+using System.IO;
 using System.Linq;
+using System.Net;
+using System.Net.Sockets;
 using System.ServiceProcess;
 
 namespace ServiceDemo1
@@ -33,7 +38,6 @@ namespace ServiceDemo1
         internal void OnDebug()
         {
             //OnStart(null);
-            UpdateYesterday();
         }
 
         protected override void OnStart(string[] args)
@@ -151,6 +155,56 @@ namespace ServiceDemo1
 
             return 0;
         }
+
+        private bool CheckForInternetConnection()
+        {
+            try
+            {
+                using (var client = new WebClient())
+                using (client.OpenRead("http://google.com/generate_204"))
+                    return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private string GetLocalIPAddress()
+        {
+            if (!System.Net.NetworkInformation.NetworkInterface.GetIsNetworkAvailable())
+            {
+                return null;
+            }
+
+            IPHostEntry host = Dns.GetHostEntry(Dns.GetHostName());
+
+            return host
+                .AddressList
+                .FirstOrDefault(ip => ip.AddressFamily == AddressFamily.InterNetwork)
+                .ToString();
+        }
+
+        private string GetPublicIPAddress()
+        {
+            var request = (HttpWebRequest)WebRequest.Create("https://ipinfo.io/ip");
+
+            request.UserAgent = "curl"; // this will tell the server to return the information as if the request was made by the linux "curl" command
+
+            string publicIPAddress;
+
+            request.Method = "GET";
+            using (WebResponse response = request.GetResponse())
+            {
+                using (var reader = new StreamReader(response.GetResponseStream()))
+                {
+                    publicIPAddress = reader.ReadToEnd();
+                }
+            }
+
+            return publicIPAddress.Replace("\n", "");
+        }
+
 
     }
 }
