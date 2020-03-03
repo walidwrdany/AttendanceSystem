@@ -1,5 +1,6 @@
 ﻿using ServiceDemo1.DataModel;
 using System;
+using System.Collections.Generic;
 using System.Data.Entity;
 using System.Linq;
 using System.ServiceProcess;
@@ -31,7 +32,8 @@ namespace ServiceDemo1
 
         internal void OnDebug()
         {
-            OnStart(null);
+            //OnStart(null);
+            UpdateYesterday();
         }
 
         protected override void OnStart(string[] args)
@@ -66,8 +68,11 @@ namespace ServiceDemo1
                 int rId = (int)changeDescription.Reason;
                 string name = Enum.GetName(typeof(SessionChangeReason), rId);
                 DateTime now = DateTime.Now;
+                string userName = System.Security.Principal.WindowsIdentity.GetCurrent().Name;
+                string computerName = System.Environment.MachineName;
 
-                _logger.WriteInfo(name);
+
+                _logger.WriteInfo(name + " / " + userName + " / " + computerName);
 
                 // To Get First SessionUnlock in Day
                 bool isFirst = rId == 8 ? !_db.ActionsLogs.Any(a => DbFunctions.TruncateTime(a.ActionDate) == DbFunctions.TruncateTime(now) && a.ActionId == rId) : false;
@@ -93,13 +98,7 @@ namespace ServiceDemo1
                             IsActive = true
                         });
                     _db.SaveChanges();
-
-                    var yesterdayActions = _db.ActionsLogs.LastOrDefault(a => DbFunctions.TruncateTime(a.ActionDate) == DbFunctions.TruncateTime(now.AddDays(-1)));
-                    var WorkYesterday = _db.WorkDays.FirstOrDefault(a => DbFunctions.TruncateTime(a.Date) == DbFunctions.TruncateTime(now.AddDays(-1)) && a.IsActive);
-                    var _EndAt = new TimeSpan(yesterdayActions.ActionDate.Hour, yesterdayActions.ActionDate.Minute, yesterdayActions.ActionDate.Second);
-                    WorkYesterday.EndAt = _EndAt;
-                    WorkYesterday.TotalHour = _EndAt - WorkYesterday.StartAt;
-                    _db.SaveChanges();
+                    UpdateYesterday();
                 }
             }
             catch (Exception ex)
@@ -130,5 +129,28 @@ namespace ServiceDemo1
                 _logger.WriteError(ex.ToString());
             }
         }
+
+        private int UpdateYesterday()
+        {
+            DateTime now = DateTime.Now;
+            DateTime yesterDate = now.AddDays(-1);
+
+            List<ActionsLog> actionsLogs = _db.ActionsLogs.Where(a => DbFunctions.TruncateTime(a.ActionDate).Value == DbFunctions.TruncateTime(yesterDate).Value).ToList();
+            WorkDays workDays = _db.WorkDays.FirstOrDefault(a => DbFunctions.TruncateTime(a.Date).Value == DbFunctions.TruncateTime(yesterDate).Value && a.IsActive);
+
+            if (workDays != null)
+            {
+
+                var actionsLog = actionsLogs.Where(a => a.ActionId == (int)SessionChangeReason.SessionLock).LastOrDefault();
+                var _EndAt = new TimeSpan(actionsLog.ActionDate.Hour, actionsLog.ActionDate.Minute, actionsLog.ActionDate.Second);
+
+                workDays.EndAt = _EndAt;
+                workDays.TotalHour = _EndAt - workDays.StartAt;
+                return _db.SaveChanges();
+            }
+
+            return 0;
+        }
+
     }
 }
