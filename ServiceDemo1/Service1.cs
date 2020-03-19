@@ -40,6 +40,12 @@ namespace ServiceDemo1
         internal void OnDebug()
         {
             //OnStart(null);
+
+            int rId = 8;
+            string name = Enum.GetName(typeof(SessionChangeReason), rId);
+            DateTime now = DateTime.Now;
+
+            AddNewActionsLog(rId, name, now);
         }
 
         protected override void OnStart(string[] args)
@@ -115,7 +121,7 @@ namespace ServiceDemo1
             }.OrderBy(x => x.TimeOfDay).ToList();
 
 
-
+            EmailUtility.SendEmail("from_mail", "from_mail_name", "to_mail", "cc", "bcc", "subject", "body");
             //string _format = "HH";
 
             //if (now.ToString(_format) == ThirdScheduledTime.ToString(_format))
