@@ -11,6 +11,7 @@ namespace ServiceDemo1
     {
         public static void SendEmail(string FromMail, string FromMailName, string ToMail, string CCMail, string BCCMail, string Subject, string Body)
         {
+
             //Create the MailMessage instance 
             MailMessage myMailMessage = new MailMessage();
 
@@ -19,23 +20,21 @@ namespace ServiceDemo1
 
 
             //Assign the MailMessage's properties 
-            string _Subject = Subject;
-            string BodyToSend = Body;
-
-            myMailMessage.Body = BodyToSend;
+            myMailMessage.Body = Body;
+            myMailMessage.Subject = Subject;
             myMailMessage.IsBodyHtml = true;
-
 
             //myMailMessage.Subject = "Test Service " + _Subject;
             //myMailMessage.CC.Add(new MailAddress("welwrdany@selecteg.com"));
 
 
-            myMailMessage.Subject = _Subject;
-
-            string[] ToMuliArr = ToMail.Split(',');
-            foreach (string ToEMail in ToMuliArr)
+            if (!string.IsNullOrEmpty(ToMail))
             {
-                myMailMessage.To.Add(new MailAddress(ToEMail));
+                string[] ToMuliArr = ToMail.Split(',');
+                foreach (string ToEMail in ToMuliArr)
+                {
+                    myMailMessage.To.Add(new MailAddress(ToEMail));
+                }
             }
 
             if (!string.IsNullOrEmpty(CCMail))
