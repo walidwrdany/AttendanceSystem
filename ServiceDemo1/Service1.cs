@@ -137,10 +137,10 @@ namespace ServiceDemo1
         private int UpdateYesterday()
         {
             DateTime now = DateTime.Now;
-            DateTime yesterDate = now.AddDays(-1);
+            DateTime yesterday = now.AddDays(-1);
 
-            List<ActionsLog> actionsLogs = _db.ActionsLogs.Where(a => DbFunctions.TruncateTime(a.ActionDate).Value == DbFunctions.TruncateTime(yesterDate).Value).ToList();
-            WorkDays workDays = _db.WorkDays.FirstOrDefault(a => DbFunctions.TruncateTime(a.Date).Value == DbFunctions.TruncateTime(yesterDate).Value && a.IsActive);
+            List<ActionsLog> actionsLogs = _db.ActionsLogs.Where(a => DbFunctions.TruncateTime(a.ActionDate).Value == DbFunctions.TruncateTime(yesterday).Value).ToList();
+            WorkDays workDays = _db.WorkDays.FirstOrDefault(a => DbFunctions.TruncateTime(a.Date).Value == DbFunctions.TruncateTime(yesterday).Value && a.IsActive);
 
             if (workDays != null)
             {
