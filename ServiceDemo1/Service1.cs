@@ -121,7 +121,7 @@ namespace ServiceDemo1
             }.OrderBy(x => x.TimeOfDay).ToList();
 
 
-            EmailUtility.SendEmail("from_mail", "from_mail_name", "to_mail", "cc", "bcc", "subject", "body");
+            //EmailUtility.SendEmail("from_mail", "from_mail_name", "to_mail", "cc", "bcc", "subject", "body");
             //string _format = "HH";
 
             //if (now.ToString(_format) == ThirdScheduledTime.ToString(_format))
