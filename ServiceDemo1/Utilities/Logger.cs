@@ -10,7 +10,28 @@ namespace ServiceDemo1
 {
     public class Logger
     {
-        private string GetDateFormat() => String.Format("{0:dd/MM/yyyy hh:mm:ss tt}", DateTime.Now);
+        private string GetDateFormat() => string.Format("{0:dd/MM/yyyy hh:mm:ss tt}", DateTime.Now);
+
+
+        public void Log_Exception(Exception _exception)
+        {
+            string filePath = AppDomain.CurrentDomain.BaseDirectory + "//" +
+                Process.GetCurrentProcess().ProcessName + "_ErrorLog.txt";
+            using (StreamWriter writer = new StreamWriter(filePath, true))
+            {
+                writer.WriteLine("====================================================================================================================");
+                writer.WriteLine($"Date : {GetDateFormat()}");
+                writer.WriteLine();
+                writer.WriteLine($"Message : {_exception.Message}");
+                writer.WriteLine($"StackTrace : {_exception.StackTrace}");
+                writer.WriteLine($"Source : {_exception.Source}");
+                writer.WriteLine($"InnerException : {_exception.InnerException}");
+                writer.WriteLine();
+            }
+        }
+
+
+
         public void WriteError(string Message)
         {
             StreamWriter SW = new StreamWriter(AppDomain.CurrentDomain.BaseDirectory + "//" + Process.GetCurrentProcess().ProcessName + "_LOG.txt", true);

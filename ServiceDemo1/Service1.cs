@@ -41,11 +41,9 @@ namespace ServiceDemo1
         {
             //OnStart(null);
 
-            int rId = 8;
+            int rId = 4;
             string name = Enum.GetName(typeof(SessionChangeReason), rId);
-            DateTime now = DateTime.Now;
-
-            AddNewActionsLog(rId, name, now);
+            AddNewActionsLog(rId, name);
         }
 
         protected override void OnStart(string[] args)
@@ -78,24 +76,88 @@ namespace ServiceDemo1
         {
             try
             {
+                var eventId = (int)serviceEvents;
                 string eventName = Enum.GetName(typeof(ServiceEvents), serviceEvents);
-
                 _logger.WriteInfo(eventName);
-
-                _db.ActionsLogs.Add(
-                    new ActionsLog
-                    {
-                        ActionId = (int)serviceEvents,
-                        ActionName = eventName,
-                        ActionDate = DateTime.Now,
-                    });
-                _db.SaveChanges();
+                AddNewActionsLog(eventId, eventName);
             }
             catch (Exception ex)
             {
-                _logger.WriteError(ex.ToString());
+                _logger.Log_Exception(ex);
             }
         }
+
+
+        protected override void OnSessionChange(SessionChangeDescription changeDescription)
+        {
+            try
+            {
+                int rId = (int)changeDescription.Reason;
+                string name = Enum.GetName(typeof(SessionChangeReason), rId);
+                string userName = System.Security.Principal.WindowsIdentity.GetCurrent().Name;
+                string computerName = Environment.MachineName;
+                _logger.WriteInfo(name + " / " + userName);
+                AddNewActionsLog(rId, name);
+            }
+            catch (Exception ex)
+            {
+                _logger.Log_Exception(ex);
+            }
+        }
+
+        private void AddNewActionsLog(int rId, string name)
+        {
+            DateTime now = DateTime.Now;
+            // To Get First SessionUnlock in Day
+            bool isFirst = !_db.ActionsLogs.Any(a => DbFunctions.TruncateTime(a.ActionDate) == DbFunctions.TruncateTime(now));
+
+            _db.ActionsLogs.Add(
+                new ActionsLog
+                {
+                    ActionId = rId,
+                    ActionName = name,
+                    ActionDate = now,
+                    IsFirst = isFirst
+                });
+            _db.SaveChanges();
+
+            if (isFirst)
+            {
+                _db.WorkDays.Add(
+                            new WorkDays
+                            {
+                                Date = now,
+                                FK_StatusId = 1,
+                                StartAt = new TimeSpan(now.Hour, now.Minute, now.Second),
+                                IsActive = true
+                            });
+                _db.SaveChanges();
+            }
+        }
+
+        private void Data()
+        {
+            if (true)
+            {
+                DateTime now = DateTime.Now;
+
+
+                var yesterday = _db.ActionsLogs.GroupBy(g => DbFunctions.TruncateTime(g.ActionDate)).ToList().LastOrDefault();
+
+                var workDay = _db.WorkDays.FirstOrDefault(a => DbFunctions.TruncateTime(a.Date) == DbFunctions.TruncateTime(yesterday.Key) && a.IsActive);
+                if (workDay != null)
+                {
+                    var actionsLog = yesterday.LastOrDefault().ActionDate;
+                    var _EndAt = new TimeSpan(actionsLog.Hour, actionsLog.Minute, actionsLog.Second);
+
+                    workDay.EndAt = _EndAt;
+                    workDay.TotalHour = _EndAt - workDay.StartAt;
+                    _db.SaveChanges();
+                }
+
+            }
+        }
+
 
         private void SchedularCallback(object state)
         {
@@ -143,69 +205,6 @@ namespace ServiceDemo1
 
             int dueTime = Convert.ToInt32(timeSpan.TotalMilliseconds);
             Schedular.Change(dueTime, Timeout.Infinite);
-        }
-
-        protected override void OnSessionChange(SessionChangeDescription changeDescription)
-        {
-            try
-            {
-                int rId = (int)changeDescription.Reason;
-                string name = Enum.GetName(typeof(SessionChangeReason), rId);
-                DateTime now = DateTime.Now;
-                string userName = System.Security.Principal.WindowsIdentity.GetCurrent().Name;
-                string computerName = Environment.MachineName;
-
-                _logger.WriteInfo(name + " / " + userName);
-                AddNewActionsLog(rId, name, now);
-            }
-            catch (Exception ex)
-            {
-                _logger.WriteError(ex.ToString());
-            }
-        }
-
-        private void AddNewActionsLog(int rId, string name, DateTime now)
-        {
-            // To Get First SessionUnlock in Day
-            bool isFirst = !_db.ActionsLogs.Any(a => DbFunctions.TruncateTime(a.ActionDate) == DbFunctions.TruncateTime(now));
-
-            _db.ActionsLogs.Add(
-                new ActionsLog
-                {
-                    ActionId = rId,
-                    ActionName = name,
-                    ActionDate = now,
-                    IsFirst = isFirst
-                });
-            _db.SaveChanges();
-
-
-            if (isFirst)
-            {
-                _db.WorkDays.Add(
-                    new WorkDays
-                    {
-                        Date = now,
-                        FK_StatusId = 1,
-                        StartAt = new TimeSpan(now.Hour, now.Minute, now.Second),
-                        IsActive = true
-                    });
-                _db.SaveChanges();
-
-                var yesterday = _db.ActionsLogs.GroupBy(g => DbFunctions.TruncateTime(g.ActionDate)).ToList().LastOrDefault();
-
-                var workDay = _db.WorkDays.FirstOrDefault(a => DbFunctions.TruncateTime(a.Date) == DbFunctions.TruncateTime(yesterday.Key) && a.IsActive);
-                if (workDay != null)
-                {
-                    var actionsLog = yesterday.LastOrDefault().ActionDate;
-                    var _EndAt = new TimeSpan(actionsLog.Hour, actionsLog.Minute, actionsLog.Second);
-
-                    workDay.EndAt = _EndAt;
-                    workDay.TotalHour = _EndAt - workDay.StartAt;
-                    _db.SaveChanges();
-                }
-
-            }
         }
 
 
