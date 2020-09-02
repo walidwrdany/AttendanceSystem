@@ -9,7 +9,7 @@ namespace ServiceDemo1.Migrations
     {
         public Configuration()
         {
-            AutomaticMigrationsEnabled = false;
+            AutomaticMigrationsEnabled = true;
         }
 
         protected override void Seed(ServiceDemo1.DataModel.AttendanceSystem context)

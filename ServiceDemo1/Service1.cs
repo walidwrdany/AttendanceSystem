@@ -34,7 +34,7 @@ namespace ServiceDemo1
 
             _logger = new Logger();
             _db = new AttendanceSystem();
-            _db.Database.CreateIfNotExists();
+            
         }
 
         internal void OnDebug()

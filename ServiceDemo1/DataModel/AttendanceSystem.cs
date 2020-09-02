@@ -10,6 +10,7 @@ namespace ServiceDemo1.DataModel
         public AttendanceSystem()
             : base("name=AttendanceSystem")
         {
+            this.Database.CreateIfNotExists();
         }
 
         public virtual DbSet<ActionsLog> ActionsLogs { get; set; }
