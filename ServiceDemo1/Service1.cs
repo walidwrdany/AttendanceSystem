@@ -1,48 +1,48 @@
 ﻿using ServiceDemo1.DataModel;
-using ServiceDemo1.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Data.Entity;
-using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.ServiceProcess;
 using System.Threading;
+using ServiceDemo1.Utilities;
 
 namespace ServiceDemo1
 {
     public partial class Service1 : ServiceBase
     {
-        private Timer Schedular;
-        private Logger _logger;
+
+        private Timer _timer;
+        private readonly Logger _logger;
         private readonly AttendanceSystem _db;
+
 
         public Service1()
         {
             InitializeComponent();
 
-            this.CanHandleSessionChangeEvent = true;
+            CanHandleSessionChangeEvent = true;
 
             //Some other things you can enable here
-            this.AutoLog = true;
-            this.CanHandlePowerEvent = true;
-            this.CanPauseAndContinue = true;
-            this.CanShutdown = true;
-            this.CanStop = true;
+            AutoLog = true;
+            CanHandlePowerEvent = true;
+            CanPauseAndContinue = true;
+            CanShutdown = true;
+            CanStop = true;
 
             _logger = new Logger();
             _db = new AttendanceSystem();
-            
+
         }
 
         internal void OnDebug()
         {
             //OnStart(null);
 
-            int rId = 4;
-            string name = Enum.GetName(typeof(SessionChangeReason), rId);
+            const int rId = 4;
+            var name = Enum.GetName(typeof(SessionChangeReason), rId);
             AddNewActionsLog(rId, name);
         }
 
@@ -77,7 +77,7 @@ namespace ServiceDemo1
             try
             {
                 var eventId = (int)serviceEvents;
-                string eventName = Enum.GetName(typeof(ServiceEvents), serviceEvents);
+                var eventName = Enum.GetName(typeof(ServiceEvents), serviceEvents);
                 _logger.WriteInfo(eventName);
                 AddNewActionsLog(eventId, eventName);
             }
@@ -92,10 +92,10 @@ namespace ServiceDemo1
         {
             try
             {
-                int rId = (int)changeDescription.Reason;
-                string name = Enum.GetName(typeof(SessionChangeReason), rId);
-                string userName = System.Security.Principal.WindowsIdentity.GetCurrent().Name;
-                string computerName = Environment.MachineName;
+                var rId = (int)changeDescription.Reason;
+                var name = Enum.GetName(typeof(SessionChangeReason), rId);
+                var userName = System.Security.Principal.WindowsIdentity.GetCurrent().Name;
+                var computerName = Environment.MachineName;
                 _logger.WriteInfo(name + " / " + userName);
                 AddNewActionsLog(rId, name);
             }
@@ -107,9 +107,9 @@ namespace ServiceDemo1
 
         private void AddNewActionsLog(int rId, string name)
         {
-            DateTime now = DateTime.Now;
+            var now = DateTime.Now;
             // To Get First SessionUnlock in Day
-            bool isFirst = !_db.ActionsLogs.Any(a => DbFunctions.TruncateTime(a.ActionDate) == DbFunctions.TruncateTime(now));
+            var isFirst = !_db.ActionsLogs.Any(a => DbFunctions.TruncateTime(a.ActionDate) == DbFunctions.TruncateTime(now));
 
             _db.ActionsLogs.Add(
                 new ActionsLog
@@ -121,90 +121,64 @@ namespace ServiceDemo1
                 });
             _db.SaveChanges();
 
-            if (isFirst)
-            {
-                _db.WorkDays.Add(
-                            new WorkDays
-                            {
-                                Date = now,
-                                FK_StatusId = 1,
-                                StartAt = new TimeSpan(now.Hour, now.Minute, now.Second),
-                                IsActive = true
-                            });
-                _db.SaveChanges();
-            }
+            if (!isFirst) return;
+            _db.WorkDays.Add(
+                new WorkDays
+                {
+                    Date = now,
+                    FK_StatusId = 1,
+                    StartAt = new TimeSpan(now.Hour, now.Minute, now.Second),
+                    IsActive = true
+                });
+            _db.SaveChanges();
         }
 
         private void Data()
         {
             if (true)
             {
-                DateTime now = DateTime.Now;
-
-
+                var now = DateTime.Now;
                 var yesterday = _db.ActionsLogs.GroupBy(g => DbFunctions.TruncateTime(g.ActionDate)).ToList().LastOrDefault();
-
                 var workDay = _db.WorkDays.FirstOrDefault(a => DbFunctions.TruncateTime(a.Date) == DbFunctions.TruncateTime(yesterday.Key) && a.IsActive);
-                if (workDay != null)
-                {
-                    var actionsLog = yesterday.LastOrDefault().ActionDate;
-                    var _EndAt = new TimeSpan(actionsLog.Hour, actionsLog.Minute, actionsLog.Second);
+                if (workDay == null) return;
+                var actionsLog = yesterday.LastOrDefault().ActionDate;
+                var endAt = new TimeSpan(actionsLog.Hour, actionsLog.Minute, actionsLog.Second);
 
-                    workDay.EndAt = _EndAt;
-                    workDay.TotalHour = _EndAt - workDay.StartAt;
-                    _db.SaveChanges();
-                }
+                workDay.EndAt = endAt;
+                workDay.TotalHour = endAt - workDay.StartAt;
+                _db.SaveChanges();
 
             }
         }
 
 
-        private void SchedularCallback(object state)
+        private void Callback(object state)
         {
             ScheduleService();
         }
 
         private void ScheduleService()
         {
-            Schedular = new Timer(new TimerCallback(SchedularCallback));
-            TimeSpan timeSpan = new TimeSpan();
+            _timer = new Timer(Callback);
 
-            DateTime now = DateTime.Now;
-            DateTime scheduledTime = DateTime.Parse("09:30");
-            DateTime SecondScheduledTime = DateTime.Parse("11:59");
-            DateTime ThirdScheduledTime = DateTime.Parse("23:59");
-
-
-            List<DateTime> dates = new List<DateTime>()
+            var now = DateTime.Now;
+            var dates = new List<DateTime>
             {
-                SecondScheduledTime,
-                scheduledTime,
-                ThirdScheduledTime
-            }.OrderBy(x => x.TimeOfDay).ToList();
+                DateTime.Parse("09:30"),
+                DateTime.Parse("11:59"),
+                DateTime.Parse("23:59")
+            }
+                .OrderBy(x => x.TimeOfDay)
+                .ToList();
 
+            var nextDateToRun = dates.Any(a => a >= now) ? dates.FirstOrDefault(a => a >= now) : dates.FirstOrDefault().AddDays(1);
+            var timeSpan = nextDateToRun.Subtract(now);
 
-            //EmailUtility.SendEmail("from_mail", "from_mail_name", "to_mail", "cc", "bcc", "subject", "body");
-            //string _format = "HH";
+            _logger.WriteInfo(
+                $"Simple Service Scheduled to run after: {timeSpan.Days} Day(s) {timeSpan.Hours} Hour(s) {timeSpan.Minutes} Minute(s) {timeSpan.Seconds} Second(s)");
 
-            //if (now.ToString(_format) == ThirdScheduledTime.ToString(_format))
-            //    SendEmailSummary(reports.Where(a => a.ReportMode == "Daily"));
-
-            //else if (now.ToString(_format) == SecondScheduledTime.ToString(_format))
-            //    SendEmailSummary(reports.Where(a => a.ReportMode == "Weekly" && a.DayToSend == now.DayOfWeek.ToString()));
-
-            //else if (now.ToString(_format) == scheduledTime.ToString(_format))
-            //    SendEmailSummary(reports.Where(a => a.ReportMode == "Monthly" && a.DayToSend == now.Day.ToString()));
-
-
-
-
-            var nextDateToRun = dates.Where(a => a >= now).Count() > 0 ? dates.Where(a => a >= now).FirstOrDefault() : dates.FirstOrDefault().AddDays(1);
-            timeSpan = nextDateToRun.Subtract(now);
-
-            _logger.WriteInfo($"Simple Service Scheduled to run after: {timeSpan.Days} Day(s) {timeSpan.Hours} Hour(s) {timeSpan.Minutes} Minute(s) {timeSpan.Seconds} Second(s)");
-
-            int dueTime = Convert.ToInt32(timeSpan.TotalMilliseconds);
-            Schedular.Change(dueTime, Timeout.Infinite);
+            var dueTime = Convert.ToInt32(timeSpan.TotalMilliseconds);
+            _timer.Change(dueTime, Timeout.Infinite);
         }
 
 
@@ -224,40 +198,22 @@ namespace ServiceDemo1
             }
         }
 
-        private string GetLocalIPAddress()
+        private string GetLocalIpAddress()
         {
             if (!System.Net.NetworkInformation.NetworkInterface.GetIsNetworkAvailable())
             {
                 return null;
             }
 
-            IPHostEntry host = Dns.GetHostEntry(Dns.GetHostName());
+            var host = Dns.GetHostEntry(Dns.GetHostName());
 
             return host
                 .AddressList
                 .FirstOrDefault(ip => ip.AddressFamily == AddressFamily.InterNetwork)
-                .ToString();
+                ?.ToString();
         }
 
-        private string GetPublicIPAddress()
-        {
-            var request = (HttpWebRequest)WebRequest.Create("https://ipinfo.io/ip");
 
-            request.UserAgent = "curl"; // this will tell the server to return the information as if the request was made by the linux "curl" command
-
-            string publicIPAddress;
-
-            request.Method = "GET";
-            using (WebResponse response = request.GetResponse())
-            {
-                using (var reader = new StreamReader(response.GetResponseStream()))
-                {
-                    publicIPAddress = reader.ReadToEnd();
-                }
-            }
-
-            return publicIPAddress.Replace("\n", "");
-        }
 
         #endregion
 

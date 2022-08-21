@@ -1,11 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Management;
 using System.Net.NetworkInformation;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ServiceDemo1.Utilities
 {
@@ -13,7 +9,7 @@ namespace ServiceDemo1.Utilities
     {
         public static void GetGraphicCard()
         {
-            ManagementObjectSearcher myVideoObject = new ManagementObjectSearcher("select * from Win32_VideoController");
+            var myVideoObject = new ManagementObjectSearcher("select * from Win32_VideoController");
 
             foreach (ManagementObject obj in myVideoObject.Get())
             {
@@ -42,17 +38,17 @@ namespace ServiceDemo1.Utilities
             if (value < 0) { return "-" + SizeSuffix(-value); }
             if (value == 0) { return "0.0 bytes"; }
 
-            int mag = (int)Math.Log(value, 1024);
-            decimal adjustedSize = (decimal)value / (1L << (mag * 10));
+            var mag = (int)Math.Log(value, 1024);
+            var adjustedSize = (decimal)value / (1L << (mag * 10));
 
             return string.Format("{0:n1} {1}", adjustedSize, SizeSuffixes[mag]);
         }
 
         public static void GetHardDrives()
         {
-            DriveInfo[] allDrives = DriveInfo.GetDrives();
+            var allDrives = DriveInfo.GetDrives();
 
-            foreach (DriveInfo d in allDrives)
+            foreach (var d in allDrives)
             {
                 Console.WriteLine("Drive {0}", d.Name);
                 Console.WriteLine("  Drive type: {0}", d.DriveType);
@@ -78,7 +74,7 @@ namespace ServiceDemo1.Utilities
 
         public static void GetProcessor()
         {
-            ManagementObjectSearcher myProcessorObject = new ManagementObjectSearcher("select * from Win32_Processor");
+            var myProcessorObject = new ManagementObjectSearcher("select * from Win32_Processor");
 
             foreach (ManagementObject obj in myProcessorObject.Get())
             {
@@ -100,7 +96,7 @@ namespace ServiceDemo1.Utilities
 
         public static void GetOperativeSystem()
         {
-            ManagementObjectSearcher myOperativeSystemObject = new ManagementObjectSearcher("select * from Win32_OperatingSystem");
+            var myOperativeSystemObject = new ManagementObjectSearcher("select * from Win32_OperatingSystem");
 
             foreach (ManagementObject obj in myOperativeSystemObject.Get())
             {
@@ -119,7 +115,7 @@ namespace ServiceDemo1.Utilities
 
         public static void GetNetworkInterface()
         {
-            NetworkInterface[] nics = NetworkInterface.GetAllNetworkInterfaces();
+            var nics = NetworkInterface.GetAllNetworkInterfaces();
 
             if (nics == null || nics.Length < 1)
             {
@@ -127,9 +123,9 @@ namespace ServiceDemo1.Utilities
             }
             else
             {
-                foreach (NetworkInterface adapter in nics)
+                foreach (var adapter in nics)
                 {
-                    IPInterfaceProperties properties = adapter.GetIPProperties();
+                    var properties = adapter.GetIPProperties();
                     Console.WriteLine();
                     Console.WriteLine(adapter.Description);
                     Console.WriteLine(String.Empty.PadLeft(adapter.Description.Length, '='));
@@ -142,8 +138,8 @@ namespace ServiceDemo1.Utilities
 
         public static void GetNetworkInterfaceFull()
         {
-            IPGlobalProperties computerProperties = IPGlobalProperties.GetIPGlobalProperties();
-            NetworkInterface[] nics = NetworkInterface.GetAllNetworkInterfaces();
+            var computerProperties = IPGlobalProperties.GetIPGlobalProperties();
+            var nics = NetworkInterface.GetAllNetworkInterfaces();
             Console.WriteLine("Interface information for {0}.{1}     ",
                     computerProperties.HostName, computerProperties.DomainName);
             if (nics == null || nics.Length < 1)
@@ -154,9 +150,9 @@ namespace ServiceDemo1.Utilities
 
             Console.WriteLine("  Number of interfaces .................... : {0}", nics.Length);
 
-            foreach (NetworkInterface adapter in nics)
+            foreach (var adapter in nics)
             {
-                IPInterfaceProperties properties = adapter.GetIPProperties();
+                var properties = adapter.GetIPProperties();
                 Console.WriteLine();
                 Console.WriteLine(adapter.Description);
                 Console.WriteLine(String.Empty.PadLeft(adapter.Description.Length, '='));
@@ -165,7 +161,7 @@ namespace ServiceDemo1.Utilities
                             adapter.GetPhysicalAddress().ToString());
                 Console.WriteLine("  Operational status ...................... : {0}",
                     adapter.OperationalStatus);
-                string versions = "";
+                var versions = "";
 
                 // Create a display string for the supported IP versions.
                 if (adapter.Supports(NetworkInterfaceComponent.IPv4))
@@ -194,12 +190,12 @@ namespace ServiceDemo1.Utilities
                 string label;
                 if (adapter.Supports(NetworkInterfaceComponent.IPv4))
                 {
-                    IPv4InterfaceProperties ipv4 = properties.GetIPv4Properties();
+                    var ipv4 = properties.GetIPv4Properties();
                     Console.WriteLine("  MTU...................................... : {0}", ipv4.Mtu);
                     if (ipv4.UsesWins)
                     {
 
-                        IPAddressCollection winsServers = properties.WinsServersAddresses;
+                        var winsServers = properties.WinsServersAddresses;
                         if (winsServers.Count > 0)
                         {
                             label = "  WINS Servers ............................ :";
@@ -221,7 +217,7 @@ namespace ServiceDemo1.Utilities
 
         public static void GetSoundCard()
         {
-            ManagementObjectSearcher myAudioObject = new ManagementObjectSearcher("select * from Win32_SoundDevice");
+            var myAudioObject = new ManagementObjectSearcher("select * from Win32_SoundDevice");
 
             foreach (ManagementObject obj in myAudioObject.Get())
             {
@@ -238,7 +234,7 @@ namespace ServiceDemo1.Utilities
 
         public static void GetPrinters()
         {
-            ManagementObjectSearcher myPrinterObject = new ManagementObjectSearcher("select * from Win32_Printer");
+            var myPrinterObject = new ManagementObjectSearcher("select * from Win32_Printer");
 
             foreach (ManagementObject obj in myPrinterObject.Get())
             {

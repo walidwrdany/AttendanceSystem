@@ -1,67 +1,68 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace ServiceDemo1
+namespace ServiceDemo1.Utilities
 {
     public class Logger
     {
-        private string GetDateFormat() => string.Format("{0:dd/MM/yyyy hh:mm:ss tt}", DateTime.Now);
+        private static string GetDateFormat() => $"{DateTime.Now:dd/MM/yyyy hh:mm:ss tt}";
 
 
-        public void Log_Exception(Exception _exception)
+        public void Log_Exception(Exception exception)
         {
-            string filePath = AppDomain.CurrentDomain.BaseDirectory + "//" +
-                Process.GetCurrentProcess().ProcessName + "_ErrorLog.txt";
-            using (StreamWriter writer = new StreamWriter(filePath, true))
+            var filePath = AppDomain.CurrentDomain.BaseDirectory + "//" +
+                           Process.GetCurrentProcess().ProcessName + "_ErrorLog.txt";
+            using (var writer = new StreamWriter(filePath, true))
             {
                 writer.WriteLine("====================================================================================================================");
                 writer.WriteLine($"Date : {GetDateFormat()}");
                 writer.WriteLine();
-                writer.WriteLine($"Message : {_exception.Message}");
-                writer.WriteLine($"StackTrace : {_exception.StackTrace}");
-                writer.WriteLine($"Source : {_exception.Source}");
-                writer.WriteLine($"InnerException : {_exception.InnerException}");
+                writer.WriteLine($"Message : {exception.Message}");
+                writer.WriteLine($"StackTrace : {exception.StackTrace}");
+                writer.WriteLine($"Source : {exception.Source}");
+                writer.WriteLine($"InnerException : {exception.InnerException}");
                 writer.WriteLine();
             }
         }
 
 
+        public void WriteError(string message)
+        {
+            var sw = new StreamWriter(AppDomain.CurrentDomain.BaseDirectory + "//" + Process.GetCurrentProcess().ProcessName + "_LOG.txt", true);
+            var dateFormat = GetDateFormat();
+            sw.WriteLine(dateFormat + "   Error:  " + message);
+            sw.Flush();
+            sw.Close();
+        }
 
-        public void WriteError(string Message)
+
+        public void WriteInfo(string message)
         {
-            StreamWriter SW = new StreamWriter(AppDomain.CurrentDomain.BaseDirectory + "//" + Process.GetCurrentProcess().ProcessName + "_LOG.txt", true);
-            string dateFormat = GetDateFormat();
-            SW.WriteLine(dateFormat + "   Error:  " + Message);
-            SW.Flush();
-            SW.Close();
+            var sw = new StreamWriter(AppDomain.CurrentDomain.BaseDirectory + "//" + Process.GetCurrentProcess().ProcessName + "_LOG.txt", true);
+            var dateFormat = GetDateFormat();
+            sw.WriteLine(dateFormat + "   Info:   " + message);
+            sw.Flush();
+            sw.Close();
         }
-        public void WriteInfo(string Message)
-        {
-            StreamWriter SW = new StreamWriter(AppDomain.CurrentDomain.BaseDirectory + "//" + Process.GetCurrentProcess().ProcessName + "_LOG.txt", true);
-            string dateFormat = GetDateFormat();
-            SW.WriteLine(dateFormat + "   Info:   " + Message);
-            SW.Flush();
-            SW.Close();
-        }
+
+
         public void Division()
         {
-            StreamWriter SW = new StreamWriter(AppDomain.CurrentDomain.BaseDirectory + "//" + Process.GetCurrentProcess().ProcessName + "_LOG.txt", true);
-            SW.WriteLine("====================================================================================================================");
-            SW.Flush();
-            SW.Close();
+            var sw = new StreamWriter(AppDomain.CurrentDomain.BaseDirectory + "//" + Process.GetCurrentProcess().ProcessName + "_LOG.txt", true);
+            sw.WriteLine("====================================================================================================================");
+            sw.Flush();
+            sw.Close();
         }
-        public void WriteFix(string Message)
+
+
+        public void WriteFix(string message)
         {
-            StreamWriter SW = new StreamWriter(AppDomain.CurrentDomain.BaseDirectory + "//" + Process.GetCurrentProcess().ProcessName + "_LOG.txt", true);
-            string dateFormat = GetDateFormat();
-            SW.WriteLine(dateFormat + "   Fix:    " + Message);
-            SW.Flush();
-            SW.Close();
+            var sw = new StreamWriter(AppDomain.CurrentDomain.BaseDirectory + "//" + Process.GetCurrentProcess().ProcessName + "_LOG.txt", true);
+            var dateFormat = GetDateFormat();
+            sw.WriteLine(dateFormat + "   Fix:    " + message);
+            sw.Flush();
+            sw.Close();
         }
     }
 }

@@ -12,10 +12,10 @@ namespace ServiceDemo1
         /// <summary>
         /// The main entry point for the application.
         /// </summary>
-        static void Main()
+        private static void Main()
         {
 #if DEBUG
-            Service1 service = new Service1();
+            var service = new Service1();
             service.OnDebug();
 #else
 

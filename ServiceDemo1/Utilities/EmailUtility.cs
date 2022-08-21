@@ -1,67 +1,32 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net.Mail;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Net.Mail;
 
-namespace ServiceDemo1
+namespace ServiceDemo1.Utilities
 {
     public class EmailUtility
     {
-        public static void SendEmail(string FromMail, string FromMailName, string ToMail, string CCMail, string BCCMail, string Subject, string Body)
+        public static void SendEmail(string fromMail, string fromMailName, string toMail, string ccMail, string bccMail, string subject, string body)
         {
 
-            //Create the MailMessage instance 
-            MailMessage myMailMessage = new MailMessage();
-
-            MailAddress fromAddress = new MailAddress(FromMail, FromMailName);
-            myMailMessage.From = fromAddress;
-
-
-            //Assign the MailMessage's properties 
-            myMailMessage.Body = Body;
-            myMailMessage.Subject = Subject;
-            myMailMessage.IsBodyHtml = true;
-
-            //myMailMessage.Subject = "Test Service " + _Subject;
-            //myMailMessage.CC.Add(new MailAddress("welwrdany@selecteg.com"));
-
-
-            if (!string.IsNullOrEmpty(ToMail))
+            var message = new MailMessage
             {
-                string[] ToMuliArr = ToMail.Split(',');
-                foreach (string ToEMail in ToMuliArr)
-                {
-                    myMailMessage.To.Add(new MailAddress(ToEMail));
-                }
-            }
+                From = new MailAddress(fromMail, fromMailName),
+                Sender = null,
+                Priority = MailPriority.Normal,
+                Subject = subject,
+                Body = body,
+                IsBodyHtml = true
+            };
 
-            if (!string.IsNullOrEmpty(CCMail))
-            {
-                string[] CCId = CCMail.Split(',');
-                foreach (string CCEmail in CCId)
-                {
-                    myMailMessage.CC.Add(new MailAddress(CCEmail));
-                }
-            }
+            foreach (var c in toMail.Split(',')) message.To.Add(new MailAddress(c));
+            foreach (var c in ccMail.Split(',')) message.CC.Add(new MailAddress(c));
+            foreach (var c in bccMail.Split(',')) message.Bcc.Add(new MailAddress(c));
 
-            if (!string.IsNullOrEmpty(BCCMail))
-            {
-                string[] BCCs = BCCMail.Split(',');
-                foreach (string BCCEmail in BCCs)
-                {
-                    myMailMessage.Bcc.Add(new MailAddress(BCCEmail));
-                }
-            }
-
-
-            SmtpClient smtp = new SmtpClient
+            var smtp = new SmtpClient
             {
                 EnableSsl = true
             };
 
-            smtp.Send(myMailMessage);
+            smtp.Send(message);
         }
     }
 }
